@@ -16,8 +16,6 @@ export const SOCKET_URL =
   import.meta.env.VITE_SERVER_URL || 
   (import.meta.env.DEV || isLocalhost ? "http://localhost:5000" : "");
 
-console.log("[Socket.IO Client] Configured Target URL:", SOCKET_URL ? SOCKET_URL : "(same-origin window.location.origin)");
-
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
   reconnection: true,
@@ -29,20 +27,26 @@ export const socket = io(SOCKET_URL, {
   withCredentials: true
 });
 
-// Debug event logging
+// Explicit debugging requested for production verification
+console.log("=== SOCKET DEBUG ===");
+console.log("Socket URL:", SOCKET_URL ? SOCKET_URL : "(same-origin window.location.origin)");
+console.log("Socket connected:", socket.connected);
+console.log("Socket ID:", socket.id);
+
 socket.on("connect", () => {
-  console.log("%c[Socket.IO Client] Connected! Socket ID: " + socket.id, "color: #10B981; font-weight: bold;");
+  console.log("=== SOCKET CONNECTED ===");
+  console.log("ID:", socket.id);
 });
 
 socket.on("connect_error", (error) => {
-  console.error("%c[Socket.IO Client] Connection failed:", "color: #EF4444; font-weight: bold;", error.message, {
-    targetUrl: SOCKET_URL || window?.location?.origin,
-    error
-  });
+  console.error("=== SOCKET ERROR ===");
+  console.error(error.message);
+  console.error(error);
 });
 
 socket.on("disconnect", (reason) => {
-  console.warn("[Socket.IO Client] Disconnected. Reason:", reason);
+  console.warn("=== SOCKET DISCONNECTED ===");
+  console.warn(reason);
 });
 
 socket.on("reconnect_attempt", (attempt) => {

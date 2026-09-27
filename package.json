@@ -1,0 +1,25 @@
+{
+  "name": "english-avb",
+  "version": "1.0.0",
+  "description": "Mobile-First Real-Time Multiplayer English Quiz Web Application",
+  "scripts": {
+    "dev": "concurrently -n \"server,client\" -c \"yellow,cyan\" \"npm run server\" \"npm run client\"",
+    "start": "node server/server.js",
+    "server": "node --watch server/server.js",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build"
+  },
+  "keywords": [
+    "english",
+    "quiz",
+    "multiplayer",
+    "real-time",
+    "socket.io",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

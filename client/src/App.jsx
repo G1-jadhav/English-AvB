@@ -126,10 +126,16 @@ export default function App() {
   // Socket.IO Connection & Event Handlers
   useEffect(() => {
     function onConnect() {
+      console.log("[App] Socket online. Connected ID:", socket.id);
       setIsConnected(true);
       attemptSessionRecovery();
     }
-    function onDisconnect() {
+    function onDisconnect(reason) {
+      console.warn("[App] Socket offline. Reason:", reason);
+      setIsConnected(false);
+    }
+    function onConnectError(error) {
+      console.error("[App] Socket connect_error:", error?.message || error);
       setIsConnected(false);
     }
 
@@ -250,6 +256,8 @@ export default function App() {
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
+    socket.on("reconnect", onConnect);
     socket.on("player-joined", onPlayerJoined);
     socket.on("room-updated", onRoomUpdated);
     socket.on("countdown-tick", onCountdownTick);
@@ -275,6 +283,8 @@ export default function App() {
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
+      socket.off("reconnect", onConnect);
       socket.off("player-joined", onPlayerJoined);
       socket.off("room-updated", onRoomUpdated);
       socket.off("countdown-tick", onCountdownTick);

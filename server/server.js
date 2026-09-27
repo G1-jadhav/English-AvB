@@ -15,19 +15,54 @@ const app = express();
 const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST"]
-}));
+// Allowed frontend origins for CORS
+const allowedOrigins = [
+  "https://english-battle-kappa.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5000"
+];
+
+if (process.env.CLIENT_URL) {
+  process.env.CLIENT_URL.split(",").forEach(url => {
+    const trimmed = url.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      allowedOrigins.push(trimmed);
+    }
+  });
+}
+
+function checkOrigin(origin, callback) {
+  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+  if (!origin) return callback(null, true);
+  if (
+    allowedOrigins.includes(origin) ||
+    origin.endsWith(".vercel.app") ||
+    /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+    /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)
+  ) {
+    return callback(null, true);
+  }
+  // In development or preview, fallback to allowing the origin
+  return callback(null, true);
+}
+
+const corsOptions = {
+  origin: checkOrigin,
+  methods: ["GET", "POST", "OPTIONS"],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions,
+  transports: ["websocket", "polling"],
+  pingInterval: 25000,
+  pingTimeout: 20000
 });
 
 const roomManager = new RoomManager(io);

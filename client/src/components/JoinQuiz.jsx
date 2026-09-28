@@ -1,47 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, Users, KeyRound } from "lucide-react";
 import { AVATARS } from "../data/avatars";
+
+// Safe helper to sanitize room code
+function normalizeRoomCode(val) {
+  if (typeof val === "string") {
+    return val.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  }
+  if (typeof val === "number") {
+    return String(val).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  }
+  return "";
+}
 
 export function JoinQuiz({ 
   onBack, 
   onJoin, 
-  playerName, 
+  playerName = "", 
   setPlayerName, 
-  playerAvatar, 
+  playerAvatar = "avatar-1", 
   setPlayerAvatar, 
   initialRoomId = "",
-  isLoading 
+  isLoading = false 
 }) {
-  const [roomId, setRoomId] = useState(initialRoomId.toUpperCase());
+  const [roomId, setRoomId] = useState(() => normalizeRoomCode(initialRoomId));
   const [error, setError] = useState("");
+
+  // Sync if initialRoomId is updated externally
+  useEffect(() => {
+    if (initialRoomId && typeof initialRoomId !== "object") {
+      const normalized = normalizeRoomCode(initialRoomId);
+      if (normalized) setRoomId(normalized);
+    }
+  }, [initialRoomId]);
 
   const handleRoomIdChange = (e) => {
     // Only alphanumeric, max 6 chars, uppercase
-    const clean = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    const raw = typeof e?.target?.value === "string" ? e.target.value : "";
+    const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     setRoomId(clean);
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!roomId || roomId.length < 4) {
+    e?.preventDefault?.();
+    const cleanRoom = typeof roomId === "string" ? roomId.trim() : "";
+    const cleanPlayer = typeof playerName === "string" ? playerName.trim() : String(playerName || "").trim();
+
+    if (!cleanRoom || cleanRoom.length < 4) {
       setError("Please enter a valid 6-character Room ID.");
       return;
     }
-    if (!playerName.trim()) {
+    if (!cleanPlayer) {
       setError("Please enter your player name.");
       return;
     }
 
     setError("");
-    onJoin({
-      roomId: roomId.trim(),
-      playerName: playerName.trim(),
-      playerAvatar
-    }, (err) => {
-      if (err) {
-        setError(err);
-      }
-    });
+    if (typeof onJoin === "function") {
+      onJoin({
+        roomId: cleanRoom,
+        playerName: cleanPlayer,
+        playerAvatar: playerAvatar || "avatar-1"
+      }, (err) => {
+        if (err) {
+          setError(typeof err === "string" ? err : "Could not join room.");
+        }
+      });
+    }
   };
 
   return (
@@ -72,7 +97,7 @@ export function JoinQuiz({
           </label>
           <input
             type="text"
-            value={roomId}
+            value={roomId || ""}
             onChange={handleRoomIdChange}
             placeholder="A7K9P2"
             maxLength={6}
@@ -94,7 +119,7 @@ export function JoinQuiz({
               <button
                 key={av.id}
                 type="button"
-                onClick={() => setPlayerAvatar(av.id)}
+                onClick={() => setPlayerAvatar && setPlayerAvatar(av.id)}
                 className={`w-11 h-11 rounded-full p-0.5 transition-all flex-shrink-0 ${
                   playerAvatar === av.id
                     ? "ring-4 ring-[#D4AF37] scale-105"
@@ -108,8 +133,8 @@ export function JoinQuiz({
 
           <input
             type="text"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
+            value={playerName || ""}
+            onChange={(e) => setPlayerName && setPlayerName(e.target.value)}
             maxLength={18}
             placeholder="Enter your player name..."
             className="w-full px-4 py-3 rounded-xl bg-white border border-[#E5D8B0] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 text-[#1F2937] text-sm font-semibold placeholder-[#9CA3AF] transition-all"

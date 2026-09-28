@@ -29,20 +29,23 @@ export function CreateQuiz({
   const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!playerName.trim()) {
+    e?.preventDefault?.();
+    const cleanName = typeof playerName === "string" ? playerName.trim() : String(playerName || "").trim();
+    if (!cleanName) {
       setError("Please enter your player name.");
       return;
     }
     setError("");
-    onCreate({
-      hostName: playerName.trim(),
-      hostAvatar: playerAvatar,
-      category,
-      difficulty: difficulty.toLowerCase(),
-      questionCount,
-      timePerQuestion
-    });
+    if (typeof onCreate === "function") {
+      onCreate({
+        hostName: cleanName,
+        hostAvatar: playerAvatar || "avatar-1",
+        category: category || "Grammar",
+        difficulty: typeof difficulty === "string" ? difficulty.toLowerCase() : "mixed",
+        questionCount: questionCount || 5,
+        timePerQuestion: timePerQuestion || 10
+      });
+    }
   };
 
   return (

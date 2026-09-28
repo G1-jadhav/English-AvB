@@ -76,9 +76,12 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlRoom = params.get("room");
-    if (urlRoom) {
-      setActiveRoomId(urlRoom.toUpperCase());
-      setCurrentView("join");
+    if (urlRoom && typeof urlRoom === "string") {
+      const clean = urlRoom.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+      if (clean) {
+        setActiveRoomId(clean);
+        setCurrentView("join");
+      }
     }
   }, []);
 
@@ -351,8 +354,16 @@ export default function App() {
       return;
     }
 
+    const cleanRoomId = typeof roomId === "string" ? roomId.trim().toUpperCase() : String(roomId || "").trim().toUpperCase();
+    const cleanPlayerName = typeof playerName === "string" ? playerName.trim() : String(playerName || "Player").trim();
+
     setIsLoading(true);
-    socket.emit("join-room", { roomId, guestId: playerId, playerName, playerAvatar }, (res) => {
+    socket.emit("join-room", { 
+      roomId: cleanRoomId, 
+      guestId: playerId, 
+      playerName: cleanPlayerName, 
+      playerAvatar: playerAvatar || "avatar-1" 
+    }, (res) => {
       setIsLoading(false);
       if (res?.success) {
         setUserRole("guest");
@@ -686,7 +697,11 @@ export default function App() {
               activeRoomId={activeRoomId}
               onNavigateCreate={() => setCurrentView("create")}
               onNavigateJoin={(code) => {
-                if (code) setActiveRoomId(code);
+                if (typeof code === "string" && code.trim()) {
+                  setActiveRoomId(code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6));
+                } else {
+                  setActiveRoomId("");
+                }
                 setCurrentView("join");
               }}
               isConnected={isConnected}

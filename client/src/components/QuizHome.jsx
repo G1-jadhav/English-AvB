@@ -180,7 +180,11 @@ export function QuizHome({
           <div className="w-full flex flex-col sm:flex-row gap-3 pt-1">
             {/* Primary Action: Gold Gradient "Create a quiz" */}
             <button
-              onClick={onNavigateCreate}
+              onClick={() => {
+                if (typeof onNavigateCreate === "function") {
+                  onNavigateCreate();
+                }
+              }}
               style={{ background: "linear-gradient(135deg, #D4AF37, #E8C96A)" }}
               className="flex-1 min-h-[52px] py-4 px-6 rounded-2xl hover:brightness-105 active:scale-[0.98] text-[#1F2937] text-base font-extrabold tracking-wide transition-all shadow-lg shadow-[#D4AF37]/25 border border-[#F4E3A1] flex items-center justify-center gap-2.5"
             >
@@ -190,7 +194,11 @@ export function QuizHome({
 
             {/* Secondary Action: Light Golden / Cream "Join a quiz" with gold border */}
             <button
-              onClick={onNavigateJoin}
+              onClick={() => {
+                if (typeof onNavigateJoin === "function") {
+                  onNavigateJoin("");
+                }
+              }}
               className="flex-1 min-h-[52px] py-4 px-6 rounded-2xl bg-[#FFFDF5] hover:bg-[#FFF8E7] active:scale-[0.98] text-[#1F2937] text-base font-bold tracking-wide transition border border-[#D4AF37] shadow-sm flex items-center justify-center gap-2.5"
             >
               <Users className="w-5 h-5 text-[#9A7610]" />
@@ -204,11 +212,15 @@ export function QuizHome({
       {/* 4. SEPARATE ROOM CARD ("Join with a room code") */}
       {/* ======================================================== */}
       <RoomIdCard 
-        roomId={activeRoomId} 
-        onCreateRoom={onNavigateCreate}
+        roomId={typeof activeRoomId === "string" ? activeRoomId : ""} 
+        onCreateRoom={() => {
+          if (typeof onNavigateCreate === "function") {
+            onNavigateCreate();
+          }
+        }}
         onJoinRoom={(code) => {
           if (typeof onNavigateJoin === "function") {
-            onNavigateJoin(code);
+            onNavigateJoin(typeof code === "string" ? code : "");
           }
         }}
       />

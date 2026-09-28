@@ -7,19 +7,21 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
   const [enteredCode, setEnteredCode] = useState("");
   const [inputError, setInputError] = useState("");
 
+  const safeRoomId = typeof roomId === "string" ? roomId : (roomId && typeof roomId !== "object" ? String(roomId) : "");
+
   const handleCopy = () => {
-    if (!roomId) return;
-    navigator.clipboard.writeText(roomId);
+    if (!safeRoomId) return;
+    navigator.clipboard.writeText(safeRoomId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleShare = async () => {
-    if (!roomId) return;
+    if (!safeRoomId) return;
     const shareData = {
       title: "Wordplay - English Quiz Arena",
-      text: `Join my English Quiz battle on Wordplay! Room Code: ${roomId}`,
-      url: window.location.href.split("?")[0] + `?room=${roomId}`
+      text: `Join my English Quiz battle on Wordplay! Room Code: ${safeRoomId}`,
+      url: window.location.href.split("?")[0] + `?room=${safeRoomId}`
     };
 
     if (navigator.share) {
@@ -38,20 +40,22 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
   };
 
   const handleCodeSubmit = (e) => {
-    e.preventDefault();
-    const clean = enteredCode.trim().toUpperCase();
+    e?.preventDefault?.();
+    const raw = typeof enteredCode === "string" ? enteredCode : String(enteredCode || "");
+    const clean = raw.trim().toUpperCase();
     if (clean.length < 4) {
       setInputError("Please enter a valid 6-character room code.");
       return;
     }
     setInputError("");
-    if (onJoinRoom) {
+    if (typeof onJoinRoom === "function") {
       onJoinRoom(clean);
     }
   };
 
   const handleCodeChange = (e) => {
-    const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    const raw = typeof e?.target?.value === "string" ? e.target.value : "";
+    const val = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     setEnteredCode(val);
     if (inputError) setInputError("");
   };
@@ -69,7 +73,7 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
           </h3>
         </div>
 
-        {roomId ? (
+        {safeRoomId ? (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#22C55E]/10 text-[#16a34a] border border-[#22C55E]/30">
             <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
             Active Room
@@ -81,7 +85,7 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
         )}
       </div>
 
-      {roomId ? (
+      {safeRoomId ? (
         /* Active Room Display State */
         <div className="flex flex-col gap-4">
           <p className="text-sm text-[#4B5563]">
@@ -93,7 +97,7 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
               ROOM CODE
             </div>
             <div className="text-3xl sm:text-4xl font-black tracking-widest text-[#1F2937] font-mono selection:bg-[#F4E3A1]">
-              {roomId}
+              {safeRoomId}
             </div>
           </div>
 

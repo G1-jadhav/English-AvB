@@ -45,19 +45,60 @@ export function QuizHome({
       {/* ======================================================== */}
       {/* 1. COMPACT HEADER */}
       {/* ======================================================== */}
-      <header className="flex flex-wrap items-center justify-between gap-3 pt-1 pb-2 border-b border-[#F1D58A]/50 bg-[#FFFFFF]">
-        {/* Left: Product Name, Live Status, Real-time 1v1 badge */}
-        <div className="flex items-center flex-wrap gap-2.5 sm:gap-3">
-          {/* Product Name "Wordplay" */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#D4AF37] to-[#E8C96A] flex items-center justify-center shadow-md shadow-[#D4AF37]/25 border border-[#F4E3A1]">
-              <BookOpen className="w-4 h-4 text-[#1F2937]" />
-            </div>
-            <span className="text-xl sm:text-2xl font-black tracking-tight text-[#1F2937] font-display">
-              Wordplay
-            </span>
+      <header className="grid grid-cols-[1fr_auto] items-center gap-y-2 gap-x-2 pt-1 pb-2 border-b border-[#F1D58A]/50 bg-[#FFFFFF] sm:flex sm:items-center sm:justify-between sm:gap-3">
+        {/* Top-Left on Mobile / First on Desktop: Product Name "Wordplay" */}
+        <div className="col-start-1 row-start-1 flex items-center gap-2 sm:order-1">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#D4AF37] to-[#E8C96A] flex items-center justify-center shadow-md shadow-[#D4AF37]/25 border border-[#F4E3A1] flex-shrink-0">
+            <BookOpen className="w-4 h-4 text-[#1F2937]" />
           </div>
+          <span className="text-xl sm:text-2xl font-black tracking-tight text-[#1F2937] font-display whitespace-nowrap">
+            Wordplay
+          </span>
+        </div>
 
+        {/* Top-Right on Mobile / Far-Right on Desktop: Demo Mode Toggle & Signed-in Player Profile Avatar */}
+        <div className="col-start-2 row-start-1 flex items-center gap-1.5 sm:gap-2 justify-self-end sm:order-3">
+          {setIsDemoMode && (
+            <button
+              onClick={() => setIsDemoMode(!isDemoMode)}
+              className={`px-2 sm:px-2.5 py-1 rounded-full border text-[10px] font-bold tracking-wide transition flex items-center gap-1 sm:gap-1.5 flex-shrink-0 ${
+                isDemoMode 
+                  ? "bg-[#D4AF37] text-[#1F2937] border-[#E8C96A] shadow-sm" 
+                  : "bg-[#FFFDF5] text-[#4B5563] border-[#E5D8B0] hover:bg-[#FFF8E7]"
+              }`}
+              title="Toggle solo bot demo vs real-time multiplayer"
+            >
+              <Radio className="w-3 h-3 text-[#9A7610]" />
+              <span className="hidden sm:inline">{isDemoMode ? "Solo Bot" : "1v1 Online"}</span>
+            </button>
+          )}
+
+          {/* Signed-in Player Avatar & Name */}
+          <button 
+            onClick={() => {
+              setTempName(playerName);
+              setShowAvatarPicker(true);
+            }}
+            className="flex items-center gap-2 sm:gap-2.5 p-1 pr-2.5 sm:pr-3 rounded-full bg-[#FFFDF5] hover:bg-[#FFF8E7] border border-[#E5D8B0] hover:border-[#D4AF37] transition active:scale-95 text-left group shadow-sm flex-shrink-0"
+            title="Click to change your avatar & name"
+          >
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#FFF8E7] ring-2 ring-[#F1D58A] group-hover:ring-[#D4AF37] transition flex-shrink-0">
+              <PlayerAvatar avatarId={playerAvatar} name="" size="sm" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[#9A7610] leading-none">
+                Player
+              </span>
+              <span className="text-xs font-bold text-[#1F2937] max-w-[70px] sm:max-w-[120px] truncate leading-tight">
+                {playerName || "Player"}
+              </span>
+            </div>
+            <Edit3 className="w-3 h-3 text-[#9A7610]/70 group-hover:text-[#9A7610] transition flex-shrink-0" />
+          </button>
+        </div>
+
+        {/* Second Row on Mobile / Left-Center on Desktop: Live Status & Real-time 1v1 Badges */}
+        <div className="col-start-1 col-span-2 row-start-2 flex items-center flex-wrap gap-2 sm:gap-3 sm:col-auto sm:row-auto sm:order-2 sm:mr-auto">
           {/* Live Status Indicator */}
           <div 
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#22C55E]/10 border border-[#22C55E]/30 text-[11px] font-bold text-[#16a34a]"
@@ -77,47 +118,6 @@ export function QuizHome({
             <Swords className="w-3 h-3 text-[#D4AF37]" />
             <span>Real-time 1v1</span>
           </div>
-        </div>
-
-        {/* Right: Demo Mode Toggle & Signed-in Player Profile Avatar */}
-        <div className="flex items-center gap-2">
-          {setIsDemoMode && (
-            <button
-              onClick={() => setIsDemoMode(!isDemoMode)}
-              className={`px-2.5 py-1 rounded-full border text-[10px] font-bold tracking-wide transition flex items-center gap-1.5 ${
-                isDemoMode 
-                  ? "bg-[#D4AF37] text-[#1F2937] border-[#E8C96A] shadow-sm" 
-                  : "bg-[#FFFDF5] text-[#4B5563] border-[#E5D8B0] hover:bg-[#FFF8E7]"
-              }`}
-              title="Toggle solo bot demo vs real-time multiplayer"
-            >
-              <Radio className="w-3 h-3 text-[#9A7610]" />
-              <span className="hidden sm:inline">{isDemoMode ? "Solo Bot" : "1v1 Online"}</span>
-            </button>
-          )}
-
-          {/* Signed-in Player Avatar & Name */}
-          <button 
-            onClick={() => {
-              setTempName(playerName);
-              setShowAvatarPicker(true);
-            }}
-            className="flex items-center gap-2.5 p-1 pr-3 rounded-full bg-[#FFFDF5] hover:bg-[#FFF8E7] border border-[#E5D8B0] hover:border-[#D4AF37] transition active:scale-95 text-left group shadow-sm"
-            title="Click to change your avatar & name"
-          >
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#FFF8E7] ring-2 ring-[#F1D58A] group-hover:ring-[#D4AF37] transition">
-              <PlayerAvatar avatarId={playerAvatar} name="" size="sm" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[#9A7610] leading-none">
-                Player
-              </span>
-              <span className="text-xs font-bold text-[#1F2937] max-w-[90px] sm:max-w-[120px] truncate leading-tight">
-                {playerName || "Player"}
-              </span>
-            </div>
-            <Edit3 className="w-3 h-3 text-[#9A7610]/70 group-hover:text-[#9A7610] transition" />
-          </button>
         </div>
       </header>
 

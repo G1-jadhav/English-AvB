@@ -47,7 +47,7 @@ export function ScoreBoard({
   const rightScore = rightPlayer.score ?? 0;
 
   return (
-    <div className="glass-card rounded-[24px] p-3.5 border border-white/20 shadow-xl relative overflow-hidden backdrop-blur-md">
+    <div className="bg-[#FFF8E7] rounded-[24px] p-3.5 border border-[#F1D58A] shadow-md relative overflow-hidden">
       <div className="flex items-center justify-between">
         {/* Current User / "YOU" (Always Left) */}
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -65,7 +65,7 @@ export function ScoreBoard({
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                 </span>
               ) : (
-                <span className="w-4 h-4 rounded-full bg-white/20 text-white/70 flex items-center justify-center text-[10px]">
+                <span className="w-4 h-4 rounded-full bg-[#FFFDF5] text-[#9CA3AF] border border-[#E5D8B0] flex items-center justify-center text-[10px]">
                   <Clock className="w-2.5 h-2.5" />
                 </span>
               )}
@@ -73,11 +73,11 @@ export function ScoreBoard({
           </div>
 
           <div className="min-w-0">
-            <div className="text-[10px] text-white/50 uppercase font-semibold leading-tight flex items-center gap-1">
+            <div className="text-[10px] text-[#6B7280] uppercase font-semibold leading-tight flex items-center gap-1">
               <span className="truncate max-w-[85px]">{leftPlayer?.name || "You"}</span>
-              <span className="text-[#8587D9] font-bold">(You)</span>
+              <span className="text-[#9A7610] font-bold">(You)</span>
             </div>
-            <div className="text-xl font-black text-white font-display">
+            <div className="text-xl font-black text-[#1F2937] font-display">
               {leftScore}
             </div>
           </div>
@@ -85,12 +85,12 @@ export function ScoreBoard({
 
         {/* Center VS Score Badge (Relative: User Score - Opponent Score) */}
         <div className="px-3 flex flex-col items-center">
-          <div className="text-[10px] font-extrabold tracking-widest text-indigo-300 uppercase">
+          <div className="text-[10px] font-extrabold tracking-widest text-[#9A7610] uppercase">
             SCORE
           </div>
-          <div className="text-base font-black text-white tracking-wider flex items-center gap-1.5 font-mono">
+          <div className="text-base font-black text-[#1F2937] tracking-wider flex items-center gap-1.5 font-mono">
             <span>{leftScore}</span>
-            <span className="text-white/40">-</span>
+            <span className="text-[#9CA3AF]">-</span>
             <span>{rightScore}</span>
           </div>
         </div>
@@ -98,10 +98,10 @@ export function ScoreBoard({
         {/* Opponent (Always Right) */}
         <div className="flex items-center justify-end gap-2.5 flex-1 min-w-0 text-right">
           <div className="min-w-0">
-            <div className="text-[10px] text-white/50 uppercase font-semibold leading-tight flex items-center justify-end gap-1">
+            <div className="text-[10px] text-[#6B7280] uppercase font-semibold leading-tight flex items-center justify-end gap-1">
               <span className="truncate max-w-[100px]">{rightPlayer?.name || "Opponent"}</span>
             </div>
-            <div className="text-xl font-black text-white font-display">
+            <div className="text-xl font-black text-[#1F2937] font-display">
               {rightScore}
             </div>
           </div>
@@ -120,7 +120,7 @@ export function ScoreBoard({
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                 </span>
               ) : (
-                <span className="w-4 h-4 rounded-full bg-white/20 text-white/70 flex items-center justify-center text-[10px]">
+                <span className="w-4 h-4 rounded-full bg-[#FFFDF5] text-[#9CA3AF] border border-[#E5D8B0] flex items-center justify-center text-[10px]">
                   <Clock className="w-2.5 h-2.5" />
                 </span>
               )}

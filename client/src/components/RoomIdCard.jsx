@@ -57,25 +57,25 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
   };
 
   return (
-    <div className="glass-card rounded-[26px] p-6 sm:p-7 border border-violet-500/20 shadow-xl shadow-purple-950/40 relative overflow-hidden transition-all duration-300">
+    <div className="glass-card rounded-[26px] p-6 sm:p-7 border border-[#F1D58A] bg-[#FFF8E7] shadow-xl relative overflow-hidden transition-all duration-300">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300">
+          <div className="w-8 h-8 rounded-xl bg-[#FFFDF5] border border-[#F1D58A] flex items-center justify-center text-[#9A7610]">
             <KeyRound className="w-4 h-4" />
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold text-[#1F2937] tracking-tight">
             Join with a room code
           </h3>
         </div>
 
         {roomId ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#22C55E]/10 text-[#16a34a] border border-[#22C55E]/30">
+            <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
             Active Room
           </span>
         ) : (
-          <span className="text-xs font-semibold text-violet-300/80 bg-violet-500/10 px-2.5 py-0.5 rounded-full border border-violet-500/20">
+          <span className="text-xs font-semibold text-[#9A7610] bg-[#FFFDF5] px-2.5 py-0.5 rounded-full border border-[#F1D58A]">
             Multiplayer
           </span>
         )}
@@ -84,15 +84,15 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
       {roomId ? (
         /* Active Room Display State */
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-violet-200/80">
+          <p className="text-sm text-[#4B5563]">
             Your private arena is open. Share this room code with a friend to start:
           </p>
 
-          <div className="bg-[#0b051b]/80 rounded-2xl p-4 sm:p-5 border border-violet-500/25 text-center relative group">
-            <div className="text-[11px] tracking-wider text-violet-300/70 uppercase font-bold mb-1">
+          <div className="bg-[#FFFDF5] rounded-2xl p-4 sm:p-5 border border-[#F1D58A] text-center relative group shadow-sm">
+            <div className="text-[11px] tracking-wider text-[#9A7610] uppercase font-bold mb-1">
               ROOM CODE
             </div>
-            <div className="text-3xl sm:text-4xl font-black tracking-widest text-white font-mono selection:bg-violet-600">
+            <div className="text-3xl sm:text-4xl font-black tracking-widest text-[#1F2937] font-mono selection:bg-[#F4E3A1]">
               {roomId}
             </div>
           </div>
@@ -100,16 +100,16 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={handleCopy}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 text-white text-xs sm:text-sm font-bold transition border border-white/20 hover:border-violet-400/40"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#FFFDF5] hover:bg-white active:scale-95 text-[#1F2937] text-xs sm:text-sm font-bold transition border border-[#E5D8B0] hover:border-[#D4AF37] shadow-sm"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span className="text-emerald-400">Copied!</span>
+                  <Check className="w-4 h-4 text-[#22C55E]" />
+                  <span className="text-[#16a34a]">Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 text-violet-300" />
+                  <Copy className="w-4 h-4 text-[#9A7610]" />
                   <span>Copy Code</span>
                 </>
               )}
@@ -117,9 +117,10 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
 
             <button
               onClick={handleShare}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs sm:text-sm font-bold transition shadow-md shadow-violet-600/30 border border-violet-400/30"
+              style={{ background: "linear-gradient(135deg, #D4AF37, #E8C96A)" }}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl hover:brightness-105 active:scale-95 text-[#1F2937] text-xs sm:text-sm font-bold transition shadow-md shadow-[#D4AF37]/20 border border-[#F4E3A1]"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4 text-[#1F2937]" />
               <span>{shareFeedback || "Share Link"}</span>
             </button>
           </div>
@@ -127,7 +128,7 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
       ) : (
         /* Clear Empty State & Direct Entry */
         <div className="flex flex-col gap-4">
-          <p className="text-xs sm:text-sm text-violet-200/80 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">
             Enter a 6-character room code from your friend to jump directly into the battle.
           </p>
 
@@ -140,17 +141,18 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
                   onChange={handleCodeChange}
                   maxLength={6}
                   placeholder="e.g. KV89P2"
-                  className="w-full px-4 py-3 rounded-xl glass-input text-base font-mono font-bold tracking-widest placeholder-white/30 uppercase focus:border-violet-400"
+                  className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] border border-[#E5D8B0] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 text-[#1F2937] placeholder-[#9CA3AF] text-base font-mono font-bold tracking-widest uppercase transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={!enteredCode || enteredCode.length < 4}
+                style={enteredCode.length >= 4 ? { background: "linear-gradient(135deg, #D4AF37, #E8C96A)" } : {}}
                 className={`px-5 py-3 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center gap-1.5 shadow-md ${
                   enteredCode.length >= 4
-                    ? "bg-violet-600 hover:bg-violet-500 text-white shadow-violet-600/30 cursor-pointer active:scale-95 border border-violet-400/30"
-                    : "bg-white/10 text-white/40 border border-white/10 cursor-not-allowed"
+                    ? "text-[#1F2937] shadow-[#D4AF37]/25 cursor-pointer active:scale-95 border border-[#F4E3A1] hover:brightness-105"
+                    : "bg-[#FFFDF5] text-[#9CA3AF] border border-[#E5D8B0] cursor-not-allowed"
                 }`}
               >
                 <span>Join</span>
@@ -159,7 +161,7 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
             </div>
 
             {inputError && (
-              <p className="text-xs text-rose-300 font-semibold px-1">
+              <p className="text-xs text-rose-600 font-semibold px-1">
                 {inputError}
               </p>
             )}
@@ -167,20 +169,20 @@ export function RoomIdCard({ roomId, onCreateRoom, onJoinRoom }) {
 
           {/* Divider with subtle line */}
           <div className="relative flex items-center my-1">
-            <div className="flex-grow border-t border-white/10" />
-            <span className="flex-shrink mx-3 text-[11px] font-semibold text-violet-300/50 uppercase tracking-widest">
+            <div className="flex-grow border-t border-[#E5D8B0]" />
+            <span className="flex-shrink mx-3 text-[11px] font-semibold text-[#9A7610] uppercase tracking-widest">
               or host your own
             </span>
-            <div className="flex-grow border-t border-white/10" />
+            <div className="flex-grow border-t border-[#E5D8B0]" />
           </div>
 
           {/* Create a Room Action */}
           <button
             type="button"
             onClick={onCreateRoom}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-violet-200 hover:text-white text-xs sm:text-sm font-bold transition border border-white/15 hover:border-violet-400/30"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#FFFDF5] hover:bg-[#FFF8E7] active:scale-95 text-[#1F2937] text-xs sm:text-sm font-bold transition border border-[#F1D58A] hover:border-[#D4AF37] shadow-sm"
           >
-            <PlusCircle className="w-4 h-4 text-violet-400" />
+            <PlusCircle className="w-4 h-4 text-[#9A7610]" />
             <span>Create a room</span>
           </button>
         </div>

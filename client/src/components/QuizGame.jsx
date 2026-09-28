@@ -41,14 +41,14 @@ export function QuizGame({
       <div className="flex items-center justify-between">
         <button
           onClick={onExit}
-          className="py-1.5 px-3 rounded-full glass-card hover:bg-white/20 active:scale-95 transition text-white/80 hover:text-white text-xs font-bold flex items-center gap-1.5 border border-white/15"
+          className="py-1.5 px-3 rounded-full bg-[#FFF8E7] hover:bg-[#FFFDF5] active:scale-95 transition text-[#4B5563] hover:text-[#1F2937] text-xs font-bold flex items-center gap-1.5 border border-[#F1D58A] shadow-sm"
         >
-          <LogOut className="w-3.5 h-3.5" />
+          <LogOut className="w-3.5 h-3.5 text-[#9A7610]" />
           <span>Exit</span>
         </button>
 
         <div className="text-center">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-[#8587D9] font-mono">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-[#9A7610] font-mono">
             Question {(currentQuestion?.index || 0) + 1} of {room?.totalQuestions || 10}
           </span>
         </div>
@@ -58,14 +58,14 @@ export function QuizGame({
 
       {/* Opponent Disconnect Alert */}
       {opponentDisconnected && (
-        <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center justify-between animate-fade-in">
+        <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center justify-between animate-fade-in shadow-sm">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
             <span>Opponent disconnected</span>
           </div>
           <button
             onClick={onExit}
-            className="px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold text-[11px]"
+            className="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-bold text-[11px]"
           >
             Leave
           </button>
@@ -102,18 +102,18 @@ export function QuizGame({
       {/* Intermission Overlay between questions */}
       {isIntermission && (
         <div className="fixed inset-x-0 bottom-6 z-40 px-4 max-w-[420px] mx-auto animate-bounce-gentle">
-          <div className="glass-card-solid rounded-2xl p-4 shadow-2xl border-2 border-indigo-500 flex items-center justify-between">
+          <div className="bg-[#FFF8E7] rounded-2xl p-4 shadow-2xl border-2 border-[#D4AF37] flex items-center justify-between">
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+              <div className="text-xs font-bold uppercase tracking-wider text-[#9A7610]">
                 Question Complete
               </div>
-              <div className="text-sm font-black text-slate-800">
+              <div className="text-sm font-black text-[#1F2937]">
                 {room?.hostPlayer?.name} {room?.hostPlayer?.score} - {room?.guestPlayer?.score} {room?.guestPlayer?.name}
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#9A7610]">
               <span>Next</span>
-              <ArrowRight className="w-4 h-4 animate-pulse" />
+              <ArrowRight className="w-4 h-4 animate-pulse text-[#D4AF37]" />
             </div>
           </div>
         </div>

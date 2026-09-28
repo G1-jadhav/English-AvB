@@ -630,8 +630,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c071e] text-white flex flex-col items-center justify-start relative px-3 sm:px-6 py-4 sm:py-6 selection:bg-violet-600">
-      {/* Background atmospheric violet decorations */}
+    <div className="min-h-screen bg-[#FFFFFF] text-[#4B5563] flex flex-col items-center justify-start relative px-3 sm:px-6 py-4 sm:py-6 selection:bg-[#F4E3A1] selection:text-[#1F2937]">
+      {/* Background atmospheric warm golden decorations */}
       <BackgroundDecorations />
 
       {/* Synchronized 3-2-1-GO Countdown Overlay */}
@@ -643,19 +643,19 @@ export default function App() {
       <div className="w-full max-w-xl relative z-10 flex flex-col min-h-[92vh] safe-pb">
         {/* Secondary Views Header (Only shown when not on home screen) */}
         {currentView !== "home" && (
-          <header className="flex items-center justify-between pb-3 px-1 text-xs text-violet-200/70 border-b border-violet-500/15 mb-4">
+          <header className="flex items-center justify-between pb-3 px-1 text-xs text-[#6B7280] border-b border-[#F1D58A]/50 mb-4 bg-[#FFFFFF]">
             <div className="flex items-center gap-2">
-              <span className="font-black text-white text-base tracking-tight font-display">
+              <span className="font-black text-[#1F2937] text-base tracking-tight font-display">
                 Wordplay
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-950/80 border border-violet-500/25 text-violet-300 font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFF8E7] border border-[#F1D58A] text-[#9A7610] font-bold">
                 1v1 Arena
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#22C55E]">
+                <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
                 {isConnected ? "Live" : "Offline"}
               </span>
 
@@ -663,12 +663,12 @@ export default function App() {
                 onClick={() => setIsDemoMode(!isDemoMode)}
                 className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide transition flex items-center gap-1 ${
                   isDemoMode 
-                    ? "bg-amber-400 text-amber-950 border-amber-300 shadow" 
-                    : "bg-white/5 text-violet-200/80 border-violet-500/20 hover:bg-white/10"
+                    ? "bg-[#D4AF37] text-[#1F2937] border-[#E8C96A] shadow-sm" 
+                    : "bg-[#FFFDF5] text-[#4B5563] border-[#E5D8B0] hover:bg-[#FFF8E7]"
                 }`}
                 title="Toggle between Real-Time Multiplayer and Solo Demo Mode"
               >
-                <Radio className="w-2.5 h-2.5" />
+                <Radio className="w-2.5 h-2.5 text-[#9A7610]" />
                 <span>{isDemoMode ? "Solo Bot" : "1v1 Online"}</span>
               </button>
             </div>

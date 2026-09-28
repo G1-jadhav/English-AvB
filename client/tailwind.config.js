@@ -8,15 +8,21 @@ export default {
     extend: {
       colors: {
         quiz: {
-          bgDark: "#120B2E",
-          bgMid: "#211044",
-          bgLight: "#35205F",
-          accent: "#6F70C8",
-          lavender: "#8587D9",
-          cardDark: "rgba(255, 255, 255, 0.08)",
-          cardLight: "rgba(255, 255, 255, 0.95)",
-          gold: "#FBBF24",
-          emerald: "#10B981",
+          bgWhite: "#FFFFFF",
+          cardMain: "#FFF8E7",
+          cardSecondary: "#FFFDF5",
+          cardBorder: "#F1D58A",
+          goldPrimary: "#D4AF37",
+          goldLight: "#F4E3A1",
+          goldSoft: "#E8C96A",
+          textHeading: "#1F2937",
+          textNormal: "#4B5563",
+          textSecondary: "#6B7280",
+          goldText: "#9A7610",
+          liveGreen: "#22C55E",
+          optionBorder: "#E5D8B0",
+          optionSelected: "#FFF1B8",
+          emerald: "#22C55E",
           rose: "#EF4444"
         }
       },

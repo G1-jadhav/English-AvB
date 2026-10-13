@@ -128,9 +128,10 @@ Output structure:
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 2500,
-        response_format: { type: "json_object" }
+        temperature: 0.5,
+        top_p: 1,
+        max_tokens: 2048,
+        stream: false
       }),
       signal: controller.signal
     });

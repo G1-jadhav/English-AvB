@@ -1,10 +1,9 @@
 /**
  * NVIDIA NIM LLM Service for Dynamic English Quiz Question Generation
- *
- * Supported Models:
- * - meta/llama-3.1-8b-instruct (Recommended: ultra-fast, high accuracy, free tier on build.nvidia.com)
- * - meta/llama-3.3-70b-instruct (Flagship open model for complex grammar)
- * - mistralai/mistral-7b-instruct-v0.3 (Fast, low resource)
+ * Features multi-strategy parsing to handle:
+ * 1. Standard JSON responses
+ * 2. Partial/truncated JSON with unescaped quotes
+ * 3. Markdown / line-based question outputs
  */
 
 function shuffleArray(array) {
@@ -17,41 +16,228 @@ function shuffleArray(array) {
   return shuffled;
 }
 
-function cleanAndParseJSON(rawText) {
-  if (!rawText || typeof rawText !== "string") {
-    throw new Error("Empty response from LLM");
-  }
+/**
+ * Validates, formats, and ensures 4 options + matching correct answer
+ */
+function sanitizeQuestionList(rawList, category, difficulty) {
+  if (!Array.isArray(rawList)) return [];
+  const valid = [];
+  const timestamp = Date.now();
 
-  // Remove markdown code fences (```json ... ``` or ``` ...)
-  let cleaned = rawText.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-  }
+  for (let i = 0; i < rawList.length; i++) {
+    const q = rawList[i];
+    if (!q || typeof q.question !== "string" || !q.question.trim()) continue;
 
-  // Find first { or [ and last } or ]
-  const firstBrace = cleaned.indexOf("{");
-  const firstBracket = cleaned.indexOf("[");
-  let startIdx = 0;
+    const questionText = q.question.trim();
+    let options = Array.isArray(q.options)
+      ? q.options.map(opt => String(opt || "").trim()).filter(Boolean)
+      : [];
 
-  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
-    startIdx = firstBrace;
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (lastBrace !== -1) {
-      cleaned = cleaned.substring(startIdx, lastBrace + 1);
+    // Deduplicate options while preserving order
+    options = [...new Set(options)];
+
+    // If fewer than 2 options, discard as incomplete
+    if (options.length < 2) continue;
+
+    // Pad or trim to exactly 4 options
+    if (options.length === 2) {
+      options.push("Both A and B", "Neither A nor B");
+    } else if (options.length === 3) {
+      options.push("None of the above");
+    } else if (options.length > 4) {
+      options = options.slice(0, 4);
     }
-  } else if (firstBracket !== -1) {
-    startIdx = firstBracket;
-    const lastBracket = cleaned.lastIndexOf("]");
-    if (lastBracket !== -1) {
-      cleaned = cleaned.substring(startIdx, lastBracket + 1);
+
+    let correctAnswer = String(q.correctAnswer || "").trim();
+
+    // Handle letter answers like "A", "Option A", "B) Something"
+    const letterMatch = correctAnswer.match(/^(?:option\s*)?([A-D])(?:[\.\:\)]|\s|$)/i);
+    if (letterMatch) {
+      const idx = letterMatch[1].toUpperCase().charCodeAt(0) - 65;
+      if (idx >= 0 && idx < options.length) {
+        correctAnswer = options[idx];
+      }
     }
+
+    // If correctAnswer doesn't match an option, search for partial match
+    if (!options.includes(correctAnswer)) {
+      const found = options.find(opt =>
+        opt.toLowerCase() === correctAnswer.toLowerCase() ||
+        correctAnswer.toLowerCase().includes(opt.toLowerCase()) ||
+        opt.toLowerCase().includes(correctAnswer.toLowerCase())
+      );
+      correctAnswer = found || options[0];
+    }
+
+    valid.push({
+      id: q.id || `nim_${timestamp}_${i + 1}`,
+      category: q.category || category,
+      difficulty: q.difficulty || difficulty,
+      question: questionText,
+      options: shuffleArray(options), // Fisher-Yates shuffle
+      correctAnswer: correctAnswer,
+      explanation: String(q.explanation || "").trim() || `The correct answer is: ${correctAnswer}`
+    });
   }
 
-  return JSON.parse(cleaned);
+  return valid;
 }
 
 /**
- * Generate questions via NVIDIA NIM API
+ * Robust Multi-Strategy Parser:
+ * 1. Standard JSON.parse on full text
+ * 2. Per-object JSON extraction with regex (handles unescaped quotes & truncated JSON)
+ * 3. Text / Markdown line-based pattern parsing (1. Question ... A) ... B) ... Answer: ...)
+ */
+function parseQuestionsFromAnyOutput(rawText, category, difficulty) {
+  if (!rawText || typeof rawText !== "string") return [];
+
+  let text = rawText.trim();
+  // Strip markdown code fences if present
+  if (text.startsWith("```")) {
+    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  }
+
+  // --- Strategy 1: Standard JSON Parsing ---
+  try {
+    let jsonText = text;
+    const firstBrace = jsonText.indexOf("{");
+    const firstBracket = jsonText.indexOf("[");
+
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+      const lastBrace = jsonText.lastIndexOf("}");
+      if (lastBrace !== -1) jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+    } else if (firstBracket !== -1) {
+      const lastBracket = jsonText.lastIndexOf("]");
+      if (lastBracket !== -1) jsonText = jsonText.substring(firstBracket, lastBracket + 1);
+    }
+
+    // Clean trailing commas before } or ]
+    jsonText = jsonText.replace(/,\s*([}\]])/g, "$1");
+
+    const parsed = JSON.parse(jsonText);
+    const list = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.quiz || []);
+    const sanitized = sanitizeQuestionList(list, category, difficulty);
+    if (sanitized.length > 0) return sanitized;
+  } catch (_) {
+    // Strategy 1 failed, proceed to Strategy 2
+  }
+
+  // --- Strategy 2: Chunk-by-Chunk Object Extraction (Handles unescaped quotes & truncated JSON) ---
+  try {
+    const chunkResults = [];
+    const objRegex = /\{[^{}]*?"question"[\s\S]*?"options"[\s\S]*?\}/g;
+    const matchedBlocks = text.match(objRegex) || [];
+
+    for (const block of matchedBlocks) {
+      try {
+        const cleanedBlock = block.replace(/,\s*\}/g, "}");
+        const singleObj = JSON.parse(cleanedBlock);
+        if (singleObj.question && Array.isArray(singleObj.options)) {
+          chunkResults.push(singleObj);
+          continue;
+        }
+      } catch (_) {
+        // Fall through to regex extraction
+      }
+
+      // Regex field extraction bypassing unescaped quote errors
+      const qMatch = block.match(/"question"\s*:\s*"([\s\S]*?)"\s*,\s*"options"/i) ||
+                     block.match(/"question"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/i);
+      const optMatch = block.match(/"options"\s*:\s*\[([\s\S]*?)\]/i);
+      const ansMatch = block.match(/"correctAnswer"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/i) ||
+                       block.match(/"correctAnswer"\s*:\s*"([\s\S]*?)"\s*,\s*"explanation"/i);
+      const expMatch = block.match(/"explanation"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/i) ||
+                       block.match(/"explanation"\s*:\s*"([\s\S]*?)"\s*[\},]/i);
+
+      if (qMatch && optMatch) {
+        const question = qMatch[1].replace(/\\"/g, '"').trim();
+        const rawOptions = optMatch[1];
+        const options = [];
+        const optItemRegex = /"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+        let m;
+        while ((m = optItemRegex.exec(rawOptions)) !== null) {
+          options.push(m[1].replace(/\\"/g, '"').trim());
+        }
+
+        if (question && options.length >= 2) {
+          chunkResults.push({
+            question,
+            options,
+            correctAnswer: ansMatch ? ansMatch[1].replace(/\\"/g, '"').trim() : options[0],
+            explanation: expMatch ? expMatch[1].replace(/\\"/g, '"').trim() : ""
+          });
+        }
+      }
+    }
+
+    const sanitized = sanitizeQuestionList(chunkResults, category, difficulty);
+    if (sanitized.length > 0) return sanitized;
+  } catch (_) {
+    // Strategy 2 failed, proceed to Strategy 3
+  }
+
+  // --- Strategy 3: Text / Markdown line-based pattern parsing ---
+  try {
+    const textResults = [];
+    const sections = text.split(/\n(?=(?:\d+[\.\)]|\*{0,2}Question\s*\d*[\:\.]))/i);
+
+    for (const section of sections) {
+      const lines = section.split("\n").map(l => l.trim()).filter(Boolean);
+      if (lines.length < 3) continue;
+
+      let question = "";
+      const options = [];
+      let correctAnswer = "";
+      let explanation = "";
+
+      for (const line of lines) {
+        const qLineMatch = line.match(/^(?:\d+[\.\)]|\*{0,2}Question\s*\d*[\:\.]\s*)(.+)/i);
+        if (qLineMatch && !question) {
+          question = qLineMatch[1].replace(/\*\*/g, "").trim();
+          continue;
+        }
+
+        const optLineMatch = line.match(/^(?:[A-D][\.\)\:]|\[[A-D]\]|\d[\.\)\:])\s*(.+)/i);
+        if (optLineMatch && options.length < 4) {
+          options.push(optLineMatch[1].replace(/\*\*/g, "").trim());
+          continue;
+        }
+
+        const ansLineMatch = line.match(/^(?:Correct\s*)?Answer\s*[\:\.]\s*(.+)/i);
+        if (ansLineMatch) {
+          correctAnswer = ansLineMatch[1].replace(/\*\*/g, "").trim();
+          continue;
+        }
+
+        const expLineMatch = line.match(/^Explanation\s*[\:\.]\s*(.+)/i);
+        if (expLineMatch) {
+          explanation = expLineMatch[1].replace(/\*\*/g, "").trim();
+          continue;
+        }
+      }
+
+      if (question && options.length >= 2) {
+        textResults.push({
+          question,
+          options,
+          correctAnswer: correctAnswer || options[0],
+          explanation
+        });
+      }
+    }
+
+    const sanitized = sanitizeQuestionList(textResults, category, difficulty);
+    if (sanitized.length > 0) return sanitized;
+  } catch (_) {
+    // Strategy 3 failed
+  }
+
+  return [];
+}
+
+/**
+ * Generate questions via NVIDIA NIM API with ultra-resilient parsing
  * @param {string} category - Category like Grammar, Vocabulary, Tenses, Articles, Prepositions, Mixed English
  * @param {string} difficulty - easy, medium, hard
  * @param {number} count - number of questions to generate
@@ -63,7 +249,7 @@ export async function generateQuestionsFromLLM(category = "Mixed English", diffi
     return null; // Will fallback to curated questions bank
   }
 
-  const model = process.env.NVIDIA_MODEL || "mistralai/mistral-7b-instruct-v0.3";
+  const model = process.env.NVIDIA_MODEL || "z-ai/glm-5.3-flash";
   const baseUrl = (process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1").replace(/\/+$/, "");
   const timeoutMs = parseInt(process.env.LLM_TIMEOUT_MS || "30000", 10);
 
@@ -88,24 +274,24 @@ export async function generateQuestionsFromLLM(category = "Mixed English", diffi
 Category: ${category === "Mixed English" ? "Mixed English (blend of Grammar, Vocabulary, Idioms, Prepositions, and Tenses)" : category}
 Difficulty: ${difficulty}
 
-Requirements:
+CRITICAL RULES:
 1. Provide exactly ${count} questions.
 2. For each question, provide exactly 4 options.
 3. "correctAnswer" must match one of the 4 options exactly.
-4. Provide a clear and concise "explanation".
-5. Return JSON format only.
+4. IMPORTANT: Do NOT use unescaped double quotes inside question sentences or explanations. Use single quotes (') for any quoted words (e.g. He said 'hello').
+5. Output valid JSON.
 
-Output structure:
+JSON format:
 {
   "questions": [
     {
       "id": "q1",
       "category": "${category}",
       "difficulty": "${difficulty}",
-      "question": "The question text here...",
+      "question": "Question text using 'single quotes' for quoted words...",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correctAnswer": "Option A",
-      "explanation": "Explanation here..."
+      "explanation": "Brief explanation..."
     }
   ]
 }`;
@@ -121,7 +307,7 @@ Output structure:
         messages: [
           {
             role: "system",
-            content: "You are an expert English educator and question writer. You only respond with valid JSON containing multiple-choice questions for English learners."
+            content: "You are an expert English educator and question writer. You create clear multiple-choice questions for English learners."
           },
           {
             role: "user",
@@ -130,7 +316,7 @@ Output structure:
         ],
         temperature: 0.5,
         top_p: 1,
-        max_tokens: 2048,
+        max_tokens: 3500,
         stream: false
       }),
       signal: controller.signal
@@ -153,46 +339,16 @@ Output structure:
       return null;
     }
 
-    const parsed = cleanAndParseJSON(content);
-    const rawQuestions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || []);
+    // Apply multi-strategy parsing to extract questions from any response format
+    const parsedQuestions = parseQuestionsFromAnyOutput(content, category, difficulty);
 
-    if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
-      console.warn(`[LLM RESPONSE ERROR] No questions array in parsed JSON | Duration: ${durationMs}ms`);
+    if (!Array.isArray(parsedQuestions) || parsedQuestions.length === 0) {
+      console.warn(`[LLM RESPONSE PARSE ERROR] Could not extract valid questions from response | Duration: ${durationMs}ms`);
+      console.warn(`  Preview of raw response: ${content.substring(0, 300)}...`);
       return null;
     }
 
-    // Validate and sanitize questions
-    const validQuestions = [];
-    const timestamp = Date.now();
-
-    for (let i = 0; i < rawQuestions.length; i++) {
-      const q = rawQuestions[i];
-      if (
-        q &&
-        typeof q.question === "string" &&
-        Array.isArray(q.options) &&
-        q.options.length === 4 &&
-        typeof q.correctAnswer === "string" &&
-        q.options.includes(q.correctAnswer)
-      ) {
-        validQuestions.push({
-          id: q.id || `nim_${timestamp}_${i + 1}`,
-          category: q.category || category,
-          difficulty: q.difficulty || difficulty,
-          question: q.question.trim(),
-          options: shuffleArray(q.options), // Fisher-Yates shuffle to randomize answer position
-          correctAnswer: q.correctAnswer.trim(),
-          explanation: (q.explanation || "").trim() || "Correct answer: " + q.correctAnswer
-        });
-      }
-    }
-
-    if (validQuestions.length === 0) {
-      console.warn(`[LLM RESPONSE ERROR] 0 valid questions passed verification | Duration: ${durationMs}ms`);
-      return null;
-    }
-
-    const finalQuestions = validQuestions.slice(0, count);
+    const finalQuestions = parsedQuestions.slice(0, count);
 
     console.log(`[LLM RESPONSE SUCCESS]`);
     console.log(`  Status:     ${response.status} OK`);

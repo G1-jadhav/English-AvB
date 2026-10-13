@@ -12,3 +12,9 @@ services:
         value: https://english-battle-kappa.vercel.app
       - key: PORT
         value: 10000
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_MODEL
+        value: mistralai/mistral-7b-instruct-v0.3
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1

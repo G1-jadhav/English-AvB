@@ -90,7 +90,7 @@ app.get("/api/categories", (req, res) => {
 app.get("/api/ai-status", (req, res) => {
   res.json({
     aiEnabled: Boolean(process.env.NVIDIA_API_KEY),
-    model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+    model: process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4.1-flash",
     baseUrl: process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1"
   });
 });

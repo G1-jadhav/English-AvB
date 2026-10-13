@@ -69,6 +69,18 @@ export async function generateQuestionsFromLLM(category = "Mixed English", diffi
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 12000); // 12-second timeout
 
+  const requestStartTime = Date.now();
+  const requestTimeIso = new Date().toISOString();
+
+  console.log(`\n=======================================================`);
+  console.log(`[LLM REQUEST] ${requestTimeIso}`);
+  console.log(`  Model:      ${model}`);
+  console.log(`  Category:   ${category}`);
+  console.log(`  Difficulty: ${difficulty}`);
+  console.log(`  Count:      ${count}`);
+  console.log(`  Endpoint:   ${baseUrl}/chat/completions`);
+  console.log(`=======================================================`);
+
   try {
     const prompt = `Generate exactly ${count} multiple-choice English quiz questions.
 Category: ${category === "Mixed English" ? "Mixed English (blend of Grammar, Vocabulary, Idioms, Prepositions, and Tenses)" : category}
@@ -122,17 +134,19 @@ Output structure:
     });
 
     clearTimeout(timeoutId);
+    const durationMs = Date.now() - requestStartTime;
 
     if (!response.ok) {
       const errText = await response.text();
-      console.warn(`[NVIDIA NIM] API error (${response.status}):`, errText);
+      console.warn(`[LLM RESPONSE ERROR] Status: ${response.status} | Duration: ${durationMs}ms`);
+      console.warn(`  Details: ${errText}`);
       return null;
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
-      console.warn("[NVIDIA NIM] Empty response content from model");
+      console.warn(`[LLM RESPONSE ERROR] Empty content received | Duration: ${durationMs}ms`);
       return null;
     }
 
@@ -140,7 +154,7 @@ Output structure:
     const rawQuestions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || []);
 
     if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
-      console.warn("[NVIDIA NIM] Parsed JSON did not contain an array of questions");
+      console.warn(`[LLM RESPONSE ERROR] No questions array in parsed JSON | Duration: ${durationMs}ms`);
       return null;
     }
 
@@ -171,19 +185,34 @@ Output structure:
     }
 
     if (validQuestions.length === 0) {
-      console.warn("[NVIDIA NIM] No valid questions passed verification");
+      console.warn(`[LLM RESPONSE ERROR] 0 valid questions passed verification | Duration: ${durationMs}ms`);
       return null;
     }
 
-    console.log(`[NVIDIA NIM] Successfully generated ${validQuestions.length} questions using ${model}`);
-    return validQuestions.slice(0, count);
+    const finalQuestions = validQuestions.slice(0, count);
+
+    console.log(`[LLM RESPONSE SUCCESS]`);
+    console.log(`  Status:     ${response.status} OK`);
+    console.log(`  Duration:   ${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`);
+    console.log(`  Questions:  ${finalQuestions.length}`);
+    if (data.usage) {
+      console.log(`  Tokens:     Prompt: ${data.usage.prompt_tokens || 0} | Completion: ${data.usage.completion_tokens || 0} | Total: ${data.usage.total_tokens || 0}`);
+    }
+    console.log(`--- Generated Questions ---`);
+    finalQuestions.forEach((q, idx) => {
+      console.log(`  Q${idx + 1}: ${q.question}`);
+    });
+    console.log(`---------------------------\n`);
+
+    return finalQuestions;
 
   } catch (error) {
     clearTimeout(timeoutId);
+    const durationMs = Date.now() - requestStartTime;
     if (error.name === "AbortError") {
-      console.warn("[NVIDIA NIM] Request timed out. Using fallback question bank.");
+      console.warn(`[LLM REQUEST TIMEOUT] Request aborted after ${durationMs}ms. Using fallback bank.`);
     } else {
-      console.warn("[NVIDIA NIM] Generation failed:", error.message);
+      console.warn(`[LLM REQUEST FAILED] Duration: ${durationMs}ms | Error: ${error.message}`);
     }
     return null;
   }

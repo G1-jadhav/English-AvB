@@ -65,9 +65,10 @@ export async function generateQuestionsFromLLM(category = "Mixed English", diffi
 
   const model = process.env.NVIDIA_MODEL || "mistralai/mistral-7b-instruct-v0.3";
   const baseUrl = (process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1").replace(/\/+$/, "");
+  const timeoutMs = parseInt(process.env.LLM_TIMEOUT_MS || "30000", 10);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000); // 12-second timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const requestStartTime = Date.now();
   const requestTimeIso = new Date().toISOString();
@@ -78,6 +79,7 @@ export async function generateQuestionsFromLLM(category = "Mixed English", diffi
   console.log(`  Category:   ${category}`);
   console.log(`  Difficulty: ${difficulty}`);
   console.log(`  Count:      ${count}`);
+  console.log(`  Timeout:    ${timeoutMs}ms (${(timeoutMs / 1000).toFixed(1)}s)`);
   console.log(`  Endpoint:   ${baseUrl}/chat/completions`);
   console.log(`=======================================================`);
 

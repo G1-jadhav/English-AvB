@@ -1,4 +1,4 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -11,6 +11,11 @@ import { questionsBank } from "./data/questions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load .env from server directory first, fallback to root workspace directory
+dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);

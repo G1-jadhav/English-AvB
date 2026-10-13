@@ -6,7 +6,7 @@ console.log("TESTING ANSWER OPTION RANDOMIZATION (20+ QUESTIONS)");
 console.log("==================================================");
 
 // 1. Test 20 questions from getQuizQuestions
-const questions = getQuizQuestions("Mixed English", "all", 20);
+const questions = await getQuizQuestions("Mixed English", "all", 20);
 const letters = ["A", "B", "C", "D"];
 const counts = { A: 0, B: 0, C: 0, D: 0 };
 
@@ -30,7 +30,7 @@ if (counts.A >= 18) {
 
 // 2. Test another batch to verify order changes on re-run
 console.log("\n[TESTING RE-RUN / RESTART VARIATION]");
-const batch2 = getQuizQuestions("Mixed English", "all", 10);
+const batch2 = await getQuizQuestions("Mixed English", "all", 10);
 const counts2 = { A: 0, B: 0, C: 0, D: 0 };
 batch2.forEach((q, idx) => {
   const correctIdx = q.options.indexOf(q.correctAnswer);

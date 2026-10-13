@@ -572,6 +572,8 @@ export const questionsBank = [
   }
 ];
 
+import { generateQuestionsFromLLM } from "../services/llmService.js";
+
 function shuffleOptions(options) {
   if (!Array.isArray(options)) return [];
   const shuffled = [...options];
@@ -582,7 +584,7 @@ function shuffleOptions(options) {
   return shuffled;
 }
 
-export function getQuizQuestions(category = "Mixed English", difficulty = "medium", count = 10) {
+export function getFallbackQuestions(category = "Mixed English", difficulty = "medium", count = 10) {
   let pool = questionsBank;
   
   if (category && category !== "Mixed English") {
@@ -610,3 +612,22 @@ export function getQuizQuestions(category = "Mixed English", difficulty = "mediu
     options: shuffleOptions(q.options)
   }));
 }
+
+export async function getQuizQuestions(category = "Mixed English", difficulty = "medium", count = 10) {
+  try {
+    const aiQuestions = await generateQuestionsFromLLM(category, difficulty, count);
+    if (Array.isArray(aiQuestions) && aiQuestions.length >= count) {
+      return aiQuestions;
+    }
+    if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
+      const remainingCount = count - aiQuestions.length;
+      const backfill = getFallbackQuestions(category, difficulty, remainingCount);
+      return [...aiQuestions, ...backfill];
+    }
+  } catch (err) {
+    console.warn("[getQuizQuestions] LLM generation error, using fallback bank:", err.message);
+  }
+
+  return getFallbackQuestions(category, difficulty, count);
+}
+

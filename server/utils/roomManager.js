@@ -19,7 +19,7 @@ export class RoomManager {
     this.rooms = new Map();
   }
 
-  createRoom({ hostId, hostName, hostAvatar, category = "Mixed English", difficulty = "medium", questionCount = 10, timePerQuestion = QUESTION_DURATION, socketId }) {
+  async createRoom({ hostId, hostName, hostAvatar, category = "Mixed English", difficulty = "medium", questionCount = 10, timePerQuestion = QUESTION_DURATION, socketId }) {
     let roomId = generateRoomId();
     while (this.rooms.has(roomId)) {
       roomId = generateRoomId();
@@ -38,7 +38,7 @@ export class RoomManager {
       disconnectTimer: null
     };
 
-    const questions = getQuizQuestions(category, difficulty, questionCount);
+    const questions = await getQuizQuestions(category, difficulty, questionCount);
 
     const room = {
       roomId,
@@ -432,11 +432,11 @@ export class RoomManager {
     });
   }
 
-  restartQuiz(roomId) {
+  async restartQuiz(roomId) {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    room.questions = getQuizQuestions(room.quizSettings.category, room.quizSettings.difficulty, room.quizSettings.questionCount);
+    room.questions = await getQuizQuestions(room.quizSettings.category, room.quizSettings.difficulty, room.quizSettings.questionCount);
     room.currentQuestionIndex = 0;
     room.hostPlayer.score = 0;
     room.hostPlayer.correctCount = 0;

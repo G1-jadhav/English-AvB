@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -84,6 +85,14 @@ app.get("/api/room/:roomId", (req, res) => {
 app.get("/api/categories", (req, res) => {
   const categories = ["Grammar", "Vocabulary", "Tenses", "Articles", "Prepositions", "Mixed English"];
   res.json({ categories, totalQuestions: questionsBank.length });
+});
+
+app.get("/api/ai-status", (req, res) => {
+  res.json({
+    aiEnabled: Boolean(process.env.NVIDIA_API_KEY),
+    model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+    baseUrl: process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1"
+  });
 });
 
 // Serve frontend in production build if present

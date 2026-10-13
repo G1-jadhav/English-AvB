@@ -1,9 +1,9 @@
 export function setupQuizSocket(io, roomManager) {
   io.on("connection", (socket) => {
     // 1. Create Room
-    socket.on("create-room", ({ hostId, hostName, hostAvatar, category, difficulty, questionCount, timePerQuestion }, callback) => {
+    socket.on("create-room", async ({ hostId, hostName, hostAvatar, category, difficulty, questionCount, timePerQuestion }, callback) => {
       try {
-        const room = roomManager.createRoom({
+        const room = await roomManager.createRoom({
           hostId,
           hostName,
           hostAvatar,
@@ -127,10 +127,10 @@ export function setupQuizSocket(io, roomManager) {
     });
 
     // 6. Play Again / Reset
-    socket.on("play-again", ({ roomId }) => {
+    socket.on("play-again", async ({ roomId }) => {
       const room = roomManager.getRoom(roomId);
       if (room) {
-        roomManager.restartQuiz(room.roomId);
+        await roomManager.restartQuiz(room.roomId);
       }
     });
 

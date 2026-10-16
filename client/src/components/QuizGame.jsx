@@ -20,8 +20,15 @@ export function QuizGame({
   opponentDisconnected
 }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [prevQuestionIndex, setPrevQuestionIndex] = useState(currentQuestion?.index);
 
-  // Reset selected answer when a new question arrives
+  // Synchronously reset selected answer when a new question arrives to prevent stale state across renders
+  if (currentQuestion?.index !== prevQuestionIndex) {
+    setPrevQuestionIndex(currentQuestion?.index);
+    setSelectedAnswer(null);
+  }
+
+  // Effect fallback for index updates
   useEffect(() => {
     setSelectedAnswer(null);
   }, [currentQuestion?.index]);
@@ -88,6 +95,7 @@ export function QuizGame({
 
       {/* Question Card */}
       <QuestionCard
+        key={currentQuestion?.index ?? "q-card"}
         question={currentQuestion}
         selectedAnswer={selectedAnswer}
         answerFeedback={answerFeedback}

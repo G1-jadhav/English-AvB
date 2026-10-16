@@ -239,6 +239,9 @@ export default function App() {
       setCurrentView("waiting");
       setFinalResult(null);
       setAnswerFeedback(null);
+      setCurrentQuestion(null);
+      setOpponentAnswered(false);
+      setIsIntermission(false);
     }
 
     function onPlayerTemporarilyDisconnected({ role, name }) {

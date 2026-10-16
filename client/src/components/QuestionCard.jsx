@@ -26,6 +26,17 @@ export function QuestionCard({
     return question?.options ? shuffleOptions(question.options) : [];
   });
 
+  const [prevQuestionKey, setPrevQuestionKey] = useState(
+    question ? `${question.index ?? 0}-${question.question}` : null
+  );
+
+  // Synchronously update shuffled options during render if question identity changes
+  const currentQuestionKey = question ? `${question.index ?? 0}-${question.question}` : null;
+  if (currentQuestionKey !== prevQuestionKey) {
+    setPrevQuestionKey(currentQuestionKey);
+    setShuffledOptions(question?.options ? shuffleOptions(question.options) : []);
+  }
+
   // Re-shuffle ONCE whenever a new question starts (stable across timer/score renders)
   useEffect(() => {
     if (question?.options) {
@@ -81,7 +92,7 @@ export function QuestionCard({
           const isThisCorrect = correctAnswer === option;
 
           // Determine button style based on game state
-          let buttonStyle = "bg-[#FFFFFF] hover:bg-[#FFF1B8] text-[#1F2937] border-[#E5D8B0] shadow-sm";
+          let buttonStyle = "bg-[#FFFFFF] [@media(hover:hover)]:hover:bg-[#FFF1B8] text-[#1F2937] border-[#E5D8B0] shadow-sm";
           let badgeIcon = null;
 
           if (isFeedbackRevealed) {
@@ -109,13 +120,16 @@ export function QuestionCard({
 
           return (
             <button
-              key={idx}
+              key={`${question?.index ?? 0}-${option}`}
               disabled={isLocked}
-              onClick={() => onSelectAnswer(option)}
-              className={`w-full min-h-[54px] py-3.5 px-4 rounded-2xl border text-left font-semibold text-base transition-all duration-200 flex items-center justify-between active:scale-[0.99] ${buttonStyle}`}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onSelectAnswer(option);
+              }}
+              className={`w-full min-h-[54px] py-3.5 px-4 rounded-2xl border text-left font-semibold text-base transition-all duration-200 flex items-center justify-between active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-1 ${buttonStyle}`}
             >
               <div className="flex items-center gap-3">
-                <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold font-mono ${
+                <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold font-mono transition-colors duration-200 ${
                   isFeedbackRevealed && isThisCorrect 
                     ? "bg-white text-emerald-700" 
                     : isFeedbackRevealed && isThisSelected && !isCorrect 

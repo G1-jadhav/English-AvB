@@ -20,6 +20,15 @@ export class RoomManager {
   }
 
   async createRoom({ hostId, hostName, hostAvatar, category = "Mixed English", difficulty = "medium", questionCount = 10, timePerQuestion = QUESTION_DURATION, socketId }) {
+    // Clean up any stale waiting room previously hosted by this socket to prevent duplicates
+    if (socketId) {
+      for (const [rId, r] of this.rooms.entries()) {
+        if (r.hostPlayer?.socketId === socketId && r.gameStatus === "waiting") {
+          this.cleanupRoom(rId);
+        }
+      }
+    }
+
     let roomId = generateRoomId();
     while (this.rooms.has(roomId)) {
       roomId = generateRoomId();

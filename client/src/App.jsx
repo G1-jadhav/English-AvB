@@ -52,6 +52,8 @@ export default function App() {
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const [finalResult, setFinalResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const isCreatingRef = useRef(false);
 
   // Authoritative server timestamp ref
   const questionEndTimeRef = useRef(null);
@@ -325,16 +327,105 @@ export default function App() {
   // ----------------------------------------------------
   // REAL-TIME ACTIONS
   // ----------------------------------------------------
-  const handleCreateRoom = (settings) => {
+  const handleCreateRoom = async (settings) => {
+    // Prevent duplicate room creation requests
+    if (isCreatingRef.current) return;
+
     if (isDemoMode) {
       startDemoMode(settings);
       return;
     }
 
+    isCreatingRef.current = true;
     setIsLoading(true);
-    socket.emit("create-room", { ...settings, hostId: playerId }, (res) => {
+    setCreateError("");
+
+    // Helper: Ensure socket connection is established before emitting
+    const waitForConnection = () => {
+      return new Promise((resolve, reject) => {
+        if (socket.connected) {
+          return resolve();
+        }
+
+        // Trigger active connection attempt if disconnected
+        try {
+          socket.connect();
+        } catch (_) {}
+
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            reject(new Error("Cannot connect to server. Please check your internet connection or try again."));
+          }
+        }, 4000);
+
+        const onConnect = () => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            resolve();
+          }
+        };
+
+        const onError = (err) => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            reject(new Error("Server connection error: " + (err?.message || "Connection failed")));
+          }
+        };
+
+        const cleanup = () => {
+          clearTimeout(timer);
+          socket.off("connect", onConnect);
+          socket.off("connect_error", onError);
+        };
+
+        socket.once("connect", onConnect);
+        socket.once("connect_error", onError);
+      });
+    };
+
+    try {
+      await waitForConnection();
+    } catch (connErr) {
       setIsLoading(false);
+      isCreatingRef.current = false;
+      setCreateError(connErr.message || "Cannot connect to server. Please try again.");
+      return;
+    }
+
+    // Set 8.5 second timeout for room creation
+    let hasSettled = false;
+    const timeoutHandle = setTimeout(() => {
+      if (!hasSettled) {
+        hasSettled = true;
+        setIsLoading(false);
+        isCreatingRef.current = false;
+        setCreateError("Room creation timed out (server took too long to respond). Please try again.");
+      }
+    }, 8500);
+
+    const payload = {
+      ...settings,
+      questionCount: 10,
+      hostId: playerId
+    };
+
+    socket.emit("create-room", payload, (res) => {
+      if (hasSettled) {
+        // Discard delayed response if request already timed out to avoid duplicate rooms
+        return;
+      }
+      hasSettled = true;
+      clearTimeout(timeoutHandle);
+      setIsLoading(false);
+      isCreatingRef.current = false;
+
       if (res?.success) {
+        setCreateError("");
         setUserRole("host");
         setActiveRoomId(res.roomId);
         setRoomData(res.room);
@@ -346,7 +437,7 @@ export default function App() {
           role: "host"
         }));
       } else {
-        alert("Failed to create room: " + (res?.error || "Unknown error"));
+        setCreateError(res?.error || "Failed to create quiz room. Please try again.");
       }
     });
   };
@@ -444,6 +535,8 @@ export default function App() {
     setFinalResult(null);
     setIsRoomStarting(false);
     setOpponentDisconnected(false);
+    setCreateError("");
+    isCreatingRef.current = false;
   };
 
   // ----------------------------------------------------
@@ -698,7 +791,10 @@ export default function App() {
               playerAvatar={playerAvatar}
               setPlayerAvatar={setPlayerAvatar}
               activeRoomId={activeRoomId}
-              onNavigateCreate={() => setCurrentView("create")}
+              onNavigateCreate={() => {
+                setCreateError("");
+                setCurrentView("create");
+              }}
               onNavigateJoin={(code) => {
                 if (typeof code === "string" && code.trim()) {
                   setActiveRoomId(code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6));
@@ -715,13 +811,17 @@ export default function App() {
 
           {currentView === "create" && (
             <CreateQuiz
-              onBack={() => setCurrentView("home")}
+              onBack={() => {
+                setCreateError("");
+                setCurrentView("home");
+              }}
               onCreate={handleCreateRoom}
               playerName={playerName}
               setPlayerName={setPlayerName}
               playerAvatar={playerAvatar}
               setPlayerAvatar={setPlayerAvatar}
               isLoading={isLoading}
+              createError={createError}
             />
           )}
 

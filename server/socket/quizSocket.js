@@ -1,33 +1,52 @@
 export function setupQuizSocket(io, roomManager) {
   io.on("connection", (socket) => {
     // 1. Create Room
-    socket.on("create-room", async ({ hostId, hostName, hostAvatar, category, difficulty, questionCount, timePerQuestion }, callback) => {
+    socket.on("create-room", async (data = {}, callback) => {
       try {
+        const {
+          hostId,
+          hostName,
+          hostAvatar,
+          category = "Mixed English",
+          difficulty = "medium",
+          questionCount = 10,
+          timePerQuestion = 10
+        } = data;
+
         const room = await roomManager.createRoom({
           hostId,
           hostName,
           hostAvatar,
           category,
           difficulty,
-          questionCount,
-          timePerQuestion,
+          questionCount: Number(questionCount) || 10,
+          timePerQuestion: Number(timePerQuestion) || 10,
           socketId: socket.id
         });
 
         socket.join(room.roomId);
 
+        const responsePayload = {
+          success: true,
+          roomId: room.roomId,
+          hostId: room.hostPlayer.id,
+          room: roomManager.sanitizeRoom(room)
+        };
+
         if (typeof callback === "function") {
-          callback({
-            success: true,
-            roomId: room.roomId,
-            hostId: room.hostPlayer.id,
-            room: roomManager.sanitizeRoom(room)
-          });
+          callback(responsePayload);
         }
+        // Emit event as well for clients listening on event instead of callback
+        socket.emit("room-created", responsePayload);
       } catch (err) {
+        const errorPayload = {
+          success: false,
+          error: err.message || "Failed to create quiz room."
+        };
         if (typeof callback === "function") {
-          callback({ success: false, error: err.message });
+          callback(errorPayload);
         }
+        socket.emit("room-created", errorPayload);
       }
     });
 

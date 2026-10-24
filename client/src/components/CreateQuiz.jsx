@@ -20,16 +20,18 @@ export function CreateQuiz({
   setPlayerName, 
   playerAvatar, 
   setPlayerAvatar,
-  isLoading 
+  isLoading,
+  createError
 }) {
   const [category, setCategory] = useState("Mixed English");
   const [difficulty, setDifficulty] = useState("Medium");
-  const [questionCount, setQuestionCount] = useState(10);
-  const [timePerQuestion, setTimePerQuestion] = useState(10);
+  const [questionCount] = useState(10);
+  const [timePerQuestion] = useState(10);
   const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e?.preventDefault?.();
+    if (isLoading) return;
     const cleanName = typeof playerName === "string" ? playerName.trim() : String(playerName || "").trim();
     if (!cleanName) {
       setError("Please enter your player name.");
@@ -40,13 +42,15 @@ export function CreateQuiz({
       onCreate({
         hostName: cleanName,
         hostAvatar: playerAvatar || "avatar-1",
-        category: category || "Grammar",
-        difficulty: typeof difficulty === "string" ? difficulty.toLowerCase() : "mixed",
-        questionCount: questionCount || 5,
-        timePerQuestion: timePerQuestion || 10
+        category: category || "Mixed English",
+        difficulty: typeof difficulty === "string" ? difficulty.toLowerCase() : "medium",
+        questionCount: 10,
+        timePerQuestion: 10
       });
     }
   };
+
+  const activeError = error || createError;
 
   return (
     <div className="flex flex-col gap-5 animate-fade-in">
@@ -54,7 +58,8 @@ export function CreateQuiz({
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="w-10 h-10 rounded-full bg-[#FFF8E7] border border-[#F1D58A] flex items-center justify-center text-[#4B5563] hover:text-[#1F2937] hover:bg-[#FFFDF5] active:scale-95 transition shadow-sm"
+          disabled={isLoading}
+          className="w-10 h-10 rounded-full bg-[#FFF8E7] border border-[#F1D58A] flex items-center justify-center text-[#4B5563] hover:text-[#1F2937] hover:bg-[#FFFDF5] active:scale-95 transition shadow-sm disabled:opacity-50"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -81,6 +86,7 @@ export function CreateQuiz({
               <button
                 key={av.id}
                 type="button"
+                disabled={isLoading}
                 onClick={() => setPlayerAvatar(av.id)}
                 className={`w-11 h-11 rounded-full p-0.5 transition-all flex-shrink-0 ${
                   playerAvatar === av.id
@@ -96,10 +102,14 @@ export function CreateQuiz({
           <input
             type="text"
             value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
+            disabled={isLoading}
+            onChange={(e) => {
+              setPlayerName(e.target.value);
+              if (error) setError("");
+            }}
             maxLength={18}
             placeholder="Enter your player name..."
-            className="w-full px-4 py-3 rounded-xl bg-white border border-[#E5D8B0] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 text-[#1F2937] text-sm font-semibold placeholder-[#9CA3AF] transition-all"
+            className="w-full px-4 py-3 rounded-xl bg-white border border-[#E5D8B0] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 text-[#1F2937] text-sm font-semibold placeholder-[#9CA3AF] transition-all disabled:opacity-60"
           />
         </div>
 
@@ -113,9 +123,13 @@ export function CreateQuiz({
               <button
                 key={cat}
                 type="button"
-                onClick={() => setCategory(cat)}
+                disabled={isLoading}
+                onClick={() => {
+                  setCategory(cat);
+                  if (error) setError("");
+                }}
                 style={category === cat ? { background: "linear-gradient(135deg, #D4AF37, #E8C96A)" } : {}}
-                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition text-left flex items-center justify-between ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition text-left flex items-center justify-between disabled:opacity-60 ${
                   category === cat
                     ? "text-[#1F2937] shadow-sm border border-[#F4E3A1]"
                     : "bg-[#FFFDF5] hover:bg-white text-[#4B5563] border border-[#E5D8B0]"
@@ -138,9 +152,13 @@ export function CreateQuiz({
               <button
                 key={diff}
                 type="button"
-                onClick={() => setDifficulty(diff)}
+                disabled={isLoading}
+                onClick={() => {
+                  setDifficulty(diff);
+                  if (error) setError("");
+                }}
                 style={difficulty === diff ? { background: "linear-gradient(135deg, #D4AF37, #E8C96A)" } : {}}
-                className={`py-2.5 px-2 rounded-xl text-xs font-bold transition text-center ${
+                className={`py-2.5 px-2 rounded-xl text-xs font-bold transition text-center disabled:opacity-60 ${
                   difficulty === diff
                     ? "text-[#1F2937] shadow-sm border border-[#F4E3A1]"
                     : "bg-[#FFFDF5] hover:bg-white text-[#4B5563] border border-[#E5D8B0]"
@@ -175,9 +193,9 @@ export function CreateQuiz({
           </div>
         </div>
 
-        {error && (
+        {activeError && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-center">
-            {error}
+            {activeError}
           </div>
         )}
 
@@ -185,10 +203,13 @@ export function CreateQuiz({
           type="submit"
           disabled={isLoading}
           style={{ background: "linear-gradient(135deg, #D4AF37, #E8C96A)" }}
-          className="mt-2 w-full min-h-[52px] py-4 px-6 rounded-2xl hover:brightness-105 active:scale-[0.98] text-[#1F2937] text-base font-extrabold tracking-wide transition shadow-xl shadow-[#D4AF37]/25 border border-[#F4E3A1] disabled:opacity-50 flex items-center justify-center gap-2"
+          className="mt-2 w-full min-h-[52px] py-4 px-6 rounded-2xl hover:brightness-105 active:scale-[0.98] text-[#1F2937] text-base font-extrabold tracking-wide transition shadow-xl shadow-[#D4AF37]/25 border border-[#F4E3A1] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-[#1F2937] border-t-transparent rounded-full animate-spin" />
+            <>
+              <div className="w-5 h-5 border-2 border-[#1F2937] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[#1F2937] font-extrabold text-sm sm:text-base">Creating your quiz room...</span>
+            </>
           ) : (
             <span>CREATE QUIZ ARENA</span>
           )}

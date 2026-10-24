@@ -572,11 +572,9 @@ export const questionsBank = [
   }
 ];
 
-import { generateQuestionsFromLLM } from "../services/llmService.js";
-
-function shuffleOptions(options) {
-  if (!Array.isArray(options)) return [];
-  const shuffled = [...options];
+function shuffleArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  const shuffled = [...arr];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -584,50 +582,63 @@ function shuffleOptions(options) {
   return shuffled;
 }
 
-export function getFallbackQuestions(category = "Mixed English", difficulty = "medium", count = 10) {
-  let pool = questionsBank;
-  
-  if (category && category !== "Mixed English") {
-    const filtered = questionsBank.filter(q => q.category.toLowerCase() === category.toLowerCase());
-    if (filtered.length > 0) {
-      pool = filtered;
+/**
+ * Fast synchronous selection of questions from local questionsBank.
+ * Preserves categories and difficulty selection while eliminating external API delays.
+ */
+export function getQuizQuestions(category = "Mixed English", difficulty = "medium", count = 10) {
+  const normCategory = (category || "Mixed English").trim();
+  const normDifficulty = (difficulty || "medium").trim().toLowerCase();
+
+  // 1. Determine primary category pool
+  let categoryPool = [];
+  if (normCategory.toLowerCase() === "mixed english" || !normCategory) {
+    categoryPool = [...questionsBank];
+  } else {
+    categoryPool = questionsBank.filter(
+      q => q.category.toLowerCase() === normCategory.toLowerCase()
+    );
+    if (categoryPool.length === 0) {
+      categoryPool = [...questionsBank];
     }
   }
 
-  // Filter or prioritize difficulty if available
-  if (difficulty && difficulty !== "all") {
-    const diffFiltered = pool.filter(q => q.difficulty.toLowerCase() === difficulty.toLowerCase());
-    if (diffFiltered.length >= count) {
-      pool = diffFiltered;
-    }
+  // 2. Prioritize selected difficulty if specified
+  let prioritizedPool = [];
+  if (normDifficulty && normDifficulty !== "all" && normDifficulty !== "mixed") {
+    const matching = categoryPool.filter(
+      q => q.difficulty && q.difficulty.toLowerCase() === normDifficulty
+    );
+    const nonMatching = categoryPool.filter(
+      q => !q.difficulty || q.difficulty.toLowerCase() !== normDifficulty
+    );
+    // Shuffle both subsets to maintain variety and place matching difficulty first
+    prioritizedPool = [...shuffleArray(matching), ...shuffleArray(nonMatching)];
+  } else {
+    prioritizedPool = shuffleArray(categoryPool);
   }
 
-  // Shuffle pool and select 'count' questions
-  const shuffled = shuffleOptions(pool);
-  const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+  // 3. If pool has fewer than count questions, backfill from other categories in questionsBank
+  if (prioritizedPool.length < count) {
+    const usedIds = new Set(prioritizedPool.map(q => q.id));
+    const remaining = shuffleArray(questionsBank.filter(q => !usedIds.has(q.id)));
+    prioritizedPool = [...prioritizedPool, ...remaining];
+  }
 
-  // Fisher-Yates shuffle options for each question so correct answer is randomly distributed across A, B, C, D
-  return selected.map(q => ({
-    ...q,
-    options: shuffleOptions(q.options)
+  // 4. Select exactly `count` questions and shuffle their order
+  const selected = shuffleArray(prioritizedPool.slice(0, Math.min(count, prioritizedPool.length)));
+
+  // 5. Fisher-Yates shuffle the 4 options for each question so the correct answer is evenly distributed
+  return selected.map((q, idx) => ({
+    id: q.id || `q_${Date.now()}_${idx}`,
+    category: q.category,
+    difficulty: q.difficulty,
+    question: q.question,
+    options: shuffleArray(q.options),
+    correctAnswer: q.correctAnswer,
+    explanation: q.explanation || `The correct answer is: ${q.correctAnswer}`
   }));
 }
 
-export async function getQuizQuestions(category = "Mixed English", difficulty = "medium", count = 10) {
-  try {
-    const aiQuestions = await generateQuestionsFromLLM(category, difficulty, count);
-    if (Array.isArray(aiQuestions) && aiQuestions.length >= count) {
-      return aiQuestions;
-    }
-    if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
-      const remainingCount = count - aiQuestions.length;
-      const backfill = getFallbackQuestions(category, difficulty, remainingCount);
-      return [...aiQuestions, ...backfill];
-    }
-  } catch (err) {
-    console.warn("[getQuizQuestions] LLM generation error, using fallback bank:", err.message);
-  }
-
-  return getFallbackQuestions(category, difficulty, count);
-}
+export const getFallbackQuestions = getQuizQuestions;
 
